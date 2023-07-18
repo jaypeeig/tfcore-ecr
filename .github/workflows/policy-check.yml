@@ -1,6 +1,8 @@
-name: Terraform OPA Check
+name: Terraform Policy Check
 
-on: [pull_request]
+on: 
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   Terraform:
