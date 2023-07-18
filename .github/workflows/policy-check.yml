@@ -49,5 +49,13 @@ jobs:
 
       - name: Run policy test
         run: |
-          opa exec --decision terraform/module/deny --bundle .policies/ plan.json
-          jq
+          OUTPUT=$(opa exec --decision terraform/module/deny --bundle .policies/ plan.json)
+          RESULT=$(echo $OUTPUT | jq '.result[] | .result | length')
+          if [[ "$RESULT" -gt 0 ]]; then
+            echo "Policy violation(s) detected. Please fix the issue(s) and try again."
+            echo $OUTPUT
+            exit 1
+          else
+            echo "Policy checks passed successfully. No violations detected."
+          fi
+
