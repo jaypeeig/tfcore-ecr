@@ -1,0 +1,42 @@
+name: Terraform OPA Check
+
+on: [pull_request]
+
+jobs:
+  Terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan -out=plan.tfplan
+
+      - name: Generate JSON plan
+        run: terraform show -json plan.tfplan > plan.json
+
+      - name: Setup OPA
+        uses: snyk/actions/setup-opa@master
+
+      - name: Install JQ
+        run: sudo apt-get install jq
+
+      - name: Evaluate OPA Policy
+        run: |
+          result=$(opa eval -f json -d policy.rego -i plan.json 'data')
+          deny_count=$(echo "$result" | jq '.result.deny | length')
+
+          if [ $deny_count -gt 0 ]; then
+            echo "Policy violations detected:"
+            echo "$result" | jq -r '.result.deny[]'
+            exit 1
+          fi
+        shell: bash
