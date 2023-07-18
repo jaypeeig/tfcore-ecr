@@ -23,7 +23,7 @@ jobs:
         run: terraform init -backend=false
 
       - name: Terraform Plan
-        run: terraform plan -out=plan.tfplan -var="name=dynamo"
+        run: terraform plan -out=plan.tfplan -var="name=dynamo" -refresh=false
 
       - name: Generate JSON plan
         run: terraform show -json plan.tfplan > plan.json
