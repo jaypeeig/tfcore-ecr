@@ -1,4 +1,4 @@
-package main
+package terraform.module
 
 deny[msg] {
     resource := input.resource_changes[_]

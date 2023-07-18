@@ -1,0 +1,61 @@
+name: Terraform Policy Check
+
+on: 
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  Terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup mock provider
+        run: |
+          cat > providers.tf <<EOF
+          provider "aws" {
+            region                      = "us-east-1"
+            skip_credentials_validation = true
+            skip_requesting_account_id  = true
+            skip_metadata_api_check     = true
+            s3_use_path_style           = true
+            access_key                  = "mock_access_key"
+            secret_key                  = "mock_secret_key"
+          }
+          EOF
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.4.4
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Plan
+        run: terraform plan -out=plan.tfplan -var="name=dynamo" -refresh=false
+
+      - name: Generate JSON plan
+        run: terraform show -json plan.tfplan > plan.json
+
+      - name: Setup OPA
+        uses: open-policy-agent/setup-opa@v2
+        with:
+          version: 0.44.0
+
+      - name: Run policy test
+        run: |
+          OUTPUT=$(opa exec --decision terraform/module/deny --bundle .policies/ plan.json)
+          RESULT=$(echo $OUTPUT | jq '.result[] | .result | length')
+          if [[ "$RESULT" -gt 0 ]]; then
+            echo "Policy violation(s) detected. Please fix the issue(s) and try again."
+            echo $OUTPUT
+            exit 1
+          else
+            echo "Policy checks passed successfully. No violations detected."
+          fi
+
