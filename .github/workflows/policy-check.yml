@@ -49,5 +49,5 @@ jobs:
 
       - name: Run policy test
         run: |
-          cat plan.json
-          opa eval -f json -d policy.rego -i plan.json 'data'
+          opa exec --decision terraform/module/deny --bundle .policies/ plan.json
+          jq
