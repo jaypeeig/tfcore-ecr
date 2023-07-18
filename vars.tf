@@ -5,7 +5,7 @@ variable "name" {
 
 variable "image_tag_mutability" {
   description = "The tag mutability setting for the repository. (MUTABLE or IMMUTABLE)"
-  default     = "IMMUTABLE"
+  default     = "MUTABLE"
   type        = string
 }
 
@@ -17,7 +17,7 @@ variable "force_delete" {
 
 variable "scan_on_push" {
   description = "A boolean indicating whether images are scanned on push"
-  default     = true
+  default     = false
   type        = bool
 }
 
