@@ -20,7 +20,7 @@ jobs:
           terraform_wrapper: false
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend=false
 
       - name: Terraform Plan
         run: terraform plan -out=plan.tfplan -var="name=dynamo"
