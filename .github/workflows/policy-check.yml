@@ -38,6 +38,29 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan -out=plan.tfplan -var="name=dynamo" -refresh=false
+      
+      - name: Create .policies directory and write Rego policy for SRE tags check
+        run: |
+          mkdir -p .policies
+          cat > .policies/terraform_tags_policy.rego <<EOL
+          package terraform.module
+  
+          expected_tags := {"BUDGET", "PROJECT", "NAME", "ENVIRONMENT", "OWNER", "BUSINESS"}
+  
+          resource_changes_with_type(type) = {change |
+              change = input.resource_changes[_]
+              change.type = type
+          }
+  
+          deny[msg] {
+              module_change = resource_changes_with_type("module")
+              module = module_change.change.after
+              tags = module.values.tags
+              missing_tags = expected_tags - tags
+              count(missing_tags) > 0
+              msg = sprintf("Module '%v' is missing the following tags: %v", [module.address, missing_tags])
+          }
+          EOL
 
       - name: Generate JSON plan
         run: terraform show -json plan.tfplan > plan.json
